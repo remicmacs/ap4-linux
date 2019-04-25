@@ -17,8 +17,6 @@
 * `ncurses-dev` (CLI menuconfig)
 * `kernel-package` Utility for building Linux kernel related Debian packages.
 
-fakeroot build-essential  debhelper dpkg-dev ncurses-dev
-
 ## Rodolphe
 
 Get Debian kernel build dependencies and sources :
@@ -36,4 +34,7 @@ wget https://mirrors.edge.kernel.org/pub/linux/kernel/v4.x/linux-4.9.162.tar.xz
 tar xvf linux-4.9.162.tar.xz
 ```
 
-Go into the Debian's kernel's sources and make a `make defconfig` to generate the config. Copy the *.config* file into the sources of the new kernel.Apply the Debian configuration to the new kernel by making a `make oldconfig`. You can then build the new kernel for Debian using `make bindeb-pkg`.Installing the resulting *.deb* with `dpkg -i` will add an entry into GRUB.
+
+
+Copy the old kernel config file (`/boot/.config-$(uname -r)` in Debian) in the new source directory.
+Configure the new kernel source compilation with `make olddefconfig` that will take all values from old config and set to default any new flag. [Gentoo wiki reference](https://wiki.gentoo.org/wiki/Kernel/Upgrade#make_olddefconfig)
