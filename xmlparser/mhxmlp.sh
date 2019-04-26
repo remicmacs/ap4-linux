@@ -62,6 +62,8 @@ function is_comment () {
     ! true
 }
 
+# Parse a plant entry
+
 # Parse a read line to extract tagname and tag content
 function parse_line () {
     # echo $line;
@@ -105,20 +107,60 @@ function parse_line () {
                 parse_error "Closing a closed plant entry"
             fi
 
-
-            # DO STG
-            # echo "Toggling plant state";
-            if is_open $plant_is_open ; then
-                # echo "Plant was open, closing it"
-                plant_is_open=false
-            else
-                # echo "Plant was closed, opening it"
+            if ! is_open $plant_is_open ; then
                 plant_is_open=true
+                parse_plant_entry
             fi
         ;;
-        *) process_tag $tagname "$tag_content";;
+        *) parse_error "Malformed XML - Tag outside PLANT or CATALOG entry";;
     esac
 
+}
+
+function parse_plant_entry () {
+
+    declare -A plant_array
+
+    while read line; do
+        # Get tagname by capturing content of the first tag of the line
+        tagname=$(echo $line | sed -rn 's/.*<\/?([^<>/]*)>.*/\1/p')
+
+        if [[ "placeholder$tagname" == "placeholder" ]]; then
+            parse_error "Empty Tagname"
+        fi
+
+        if [[ $tagname = "PLANT" ]] && is_closing_tag $line; then
+            break
+        fi
+
+        # Get tag content
+        # If the line contains a malformed XML field, it will contain nothing
+        tag_content=$(echo $line | sed -rn "s/.*<$tagname>([^<]*)<\/$tagname>.*/\1/p")
+
+        if [[ "placeholder$tag_content" == "placeholder" ]]; then
+            echo ${line}
+            parse_error "Malformed XML Tag or Empty Tag"
+        fi
+
+        # Check if tag has already a value for this plant
+        if [[ ${plant_array[$tagname]} != "" ]]; then
+            parse_error "Duplicate tag $tagname"
+        else
+            case $tagname in
+                COMMON|BOTANICAL|ZONE|LIGHT|PRICE|AVAILABILITY) plant_array[$tagname]=$tag_content;;
+                *) parse_error "Unknown tag \"$tagname\"";;
+            esac
+        fi
+    done
+
+    plant_is_open=false
+
+    if [[ "placeholder${plant_array[COMMON]}" == "placeholder" ]]; then
+        parse_error "Empty COMMON tag in PLANT entry"
+    fi
+
+    ((plants_nb+=1))
+    echo "${plant_array[COMMON]};${plant_array[BOTANICAL]};${plant_array[ZONE]};${plant_array[LIGHT]};${plant_array[PRICE]};${plant_array[AVAILABILITY]}"
 }
 
 # Extract information from a regular tag
