@@ -18,27 +18,34 @@ EOF
 }
 
 # Global boolean flags
-# 0 is true and 1 is false
 has_spec_tag=false
 catalog_is_open=false
 plant_is_open=false
 closing_tag=false
 
+# Display error message
+function error_message () {
+    (>&2 echo $1)
+    echo
+}
+
+# Parse error function : displays the error message and exits 19
+function parse_error () {
+    (>&2 echo "Parse Error: $1")
+    exit 19
+}
+
 # Check whether line contains XML spec tag or not
 function is_spec_tag () {
-    $(( has_spec_tag=$(echo $spec_tag | grep -q '<?x') ))
-    if has_spec_tag; then
-        echo "Found a spec tag"
-    fi
+    [[ "$1" =~ "<?xml" ]];
 }
 
 # Check whether line contains a closing tag or not
 function is_closing_tag () {
-    echo $1 | grep -q "</"
+    [[ $1 =~ "</" ]]
 }
 
 # Check whether a tag is left open or not
-# TODO: remove usage by inline test
 function is_open () {
    [[ "placeholder$1" == "placeholdertrue" ]];
 }
@@ -46,6 +53,13 @@ function is_open () {
 # Check whether the line is empty or not
 function is_empty_line () {
     [ "placeholder$1" = "placeholder" ];
+}
+
+# Check whether line is a comment or not
+# TODO: implement
+# TODO: manage multiline comment
+function is_comment () {
+    ! true
 }
 
 # Parse a read line to extract tagname and tag content
@@ -131,19 +145,6 @@ function process_tag () {
     esac
 }
 
-# Display error message
-function error_message () {
-    (>&2 echo $1)
-    echo
-}
-
-# Parse error function : displays the error message and exits 19
-function parse_error () {
-    (>&2 echo "Parse Error: $1")
-    exit 19
-}
-
-
 # Check if any arguments are used
 if [ $# -ne 0 ]; then
     error_message "Error: Too many arguments"
@@ -163,17 +164,12 @@ if $empty_file; then
     exit 11
 fi
 
-# echo "Line found $spec_tag"
-# echo $spec_tag | grep '<?x'
-echo $spec_tag | grep -q '<?x' && has_spec_tag=true
+is_spec_tag "$spec_tag" && has_spec_tag=true
 
-# while [[ ! $(echo $spec_tag | grep -q '<?xml') ]]; do*
-until [[ "$has_spec_tag" = "true" ]]; do
-    # echo "Line found $spec_tag"
+until [[ "placeholder$has_spec_tag" = "placeholdertrue" ]]; do
     read spec_tag || parse_error "No XML Spec Tag found"
     line_nb=$((line_nb + 1))
-    # echo $spec_tag | grep '<?x'
-    echo $spec_tag | grep -q '<?x' && has_spec_tag=true
+    is_spec_tag "$spec_tag" && has_spec_tag=true
 done
 
 line_nb=0
