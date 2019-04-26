@@ -60,7 +60,7 @@ while read line; do
     echo $line;
 
     # Get tagname by capturing content of the first tag of the line
-    tagname=$(echo $line | sed -rn 's/.*<(\/)?([^<>/]*)>.*/\2/p')
+    tagname=$(echo $line | sed -rn 's/.*<\/?([^<>/]*)>.*/\1/p')
 
     echo "Found tagname \"$tagname\""
     line_nb=$((line_nb + 1))
