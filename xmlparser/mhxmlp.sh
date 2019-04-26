@@ -19,24 +19,46 @@ EOF
 
 # Global boolean flags
 # 0 is true and 1 is false
-catalog_is_open=1
-plant_is_open=1
-closing_tag=1
+has_spec_tag=false
+catalog_is_open=false
+plant_is_open=false
+closing_tag=false
 
-function is_closing_tag () {
-    echo $1 | grep -q "</"
-}
-
-function is_closed () {
-    if [[ $catalog_is_open -eq 0 ]]; then
-        echo "Tag is open"
-    else
-        echo "Tag is closed"
+# Check whether line contains XML spec tag or not
+function is_spec_tag () {
+    $(( has_spec_tag=$(echo $spec_tag | grep -q '<?x') ))
+    if has_spec_tag; then
+        echo "Found a spec tag"
     fi
 }
 
+# Check whether line contains a closing tag or not
+function is_closing_tag () {
+    echo "Line to check for closing tag : \"$1\""
+    echo $1 | grep -q "</"
+    local resvalue=$?
+    echo "Result [$resvalue]"
+    return $resvalue
+}
+
+# Check whether a tag is left open or not
+# TODO: remove usage by inline test
+function is_open () {
+    if [[ "++$1" == "++true" ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Check whether the line is empty or not
+function is_empty_line () {
+    [ "placeholder$1" = "placeholder" ];
+}
+
+# Parse a read line to extract tagname and tag content
 function parse_line () {
-    echo $line;
+    # echo $line;
 
     # Get tagname by capturing content of the first tag of the line
     tagname=$(echo $line | sed -rn 's/.*<\/?([^<>/]*)>.*/\1/p')
@@ -53,39 +75,63 @@ function parse_line () {
             # echo "Checking opening/closing tag";
             is_closing_tag "$line"
             closing_tag=$?
+            echo "Res is [$closing_tag]"
 
-            if [[ ! $closing_tag -eq catalog_is_open ]]; then
+            if [[ $closing_tag -eq 0 ]]; then
+                echo "Res $closing_tag is interpreted as found closing tag"
+            fi
+
+            if [[ $closing_tag -eq 0 ]] && [[ "placeholder$catalog_is_open" == "placeholderfalse" ]]; then
+                echo "Found closing tag \"$line\""
                 parse_error "Closing a closed catalog"
-                exit 19
             fi
 
             # DO STG
 
             # echo "Toggling catalog state";
-            ((catalog_is_open ^= 1));
-            is_closed $catalog_is_open
+            if is_open $catalog_is_open ; then
+                echo "Catalog was open, closing it"
+                catalog_is_open=false
+            else
+                echo "Catalog was closed, opening it"
+
+                catalog_is_open=true
+            fi
         ;;
         "PLANT")
-            echo "Checking opening/closing tag";
+            # echo "Checking opening/closing tag";
             is_closing_tag "$line"
             closing_tag=$?
+            echo "Res is [$closing_tag]"
 
-            if [[ ! $closing_tag -eq plant_is_open ]]; then
+            if [[ $closing_tag -eq 0 ]]; then
+                echo "Res $closing_tag is interpreted as found closing tag"
+            fi
+
+            if [[ $closing_tag -eq 0 ]] && [[ "placeholder$plant_is_open" == "placeholderfalse" ]]; then
+                echo "Found closing tag \"$line\""
                 parse_error "Closing a closed plant entry"
-                exit 19
             fi
 
 
             # DO STG
             # echo "Toggling plant state";
-            ((plant_is_open ^= 1));
-            is_closed $catalog_is_open
+            if is_open $plant_is_open ; then
+                echo "Plant was open, closing it"
+
+                plant_is_open=false
+            else
+                echo "Plant was closed, opening it"
+
+                plant_is_open=true
+            fi
         ;;
         *) process_tag $tagname "$tag_content";;
     esac
 
 }
 
+# Extract information from a regular tag
 function process_tag () {
     tagname=$1
     tag_content=$2
@@ -101,7 +147,7 @@ function process_tag () {
         "LIGHT");;
         "PRICE");;
         "AVAILABILITY");;
-        *) parse_error "Unknown tag \"$tagname\"";;
+        *) echo "$tagname: $tag_content" && parse_error "Unknown tag \"$tagname\"";;
     esac
 }
 
@@ -129,6 +175,7 @@ fi
 # TODO: Do a while loop until spec is found
 empty_file=false
 read spec_tag || empty_file=true
+line_nb=$((line_nb + 1))
 # If there is no such tag, then the XML must be an empty file
 if $empty_file; then
     error_message "Error: Standard input stream was empty"
@@ -136,15 +183,25 @@ if $empty_file; then
     exit 11
 fi
 
-echo "Line found $spec_tag"
-while [[ ! $(echo $spec_tag | grep -q '<?') ]]; do
-    read spec_tag || parse_error "XML Spec Tag not found" || exit 19
-    echo "Line found $spec_tag"
+# echo "Line found $spec_tag"
+echo $spec_tag | grep '<?x'
+echo $spec_tag | grep -q '<?x' && has_spec_tag=true
+
+# while [[ ! $(echo $spec_tag | grep -q '<?xml') ]]; do*
+until [[ "$has_spec_tag" = "true" ]]; do
+    # echo "Line found $spec_tag"
+    read spec_tag || parse_error "No XML Spec Tag found"
+    line_nb=$((line_nb + 1))
+    echo $spec_tag | grep '<?x'
+    echo $spec_tag | grep -q '<?x' && has_spec_tag=true
 done
 
 line_nb=0
 plants_nb=0
 while read line; do
+    if is_empty_line $line ; then
+        continue
+    fi
     parse_line $line
     line_nb=$((line_nb + 1))
 done
