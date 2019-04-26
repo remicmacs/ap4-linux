@@ -63,6 +63,10 @@ while read line; do
     tagname=$(echo $line | sed -rn 's/.*<\/?([^<>/]*)>.*/\1/p')
 
     echo "Found tagname \"$tagname\""
+
+    tag_content=$(echo $line | sed -rn "s/.*<$tagname>([^<]*)<\/$tagname>.*/\1/p")
+
+    echo "Content is : \"$tag_content\""
     line_nb=$((line_nb + 1))
 done
 
