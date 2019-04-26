@@ -39,12 +39,19 @@ fi
 
 # Stripping XML spec tag
 empty_file=false
-read || empty_file=true
+read spec_tag|| empty_file=true
 # If there is no such tag, then the XML must be an empty file
 if $empty_file; then
     error_message "Error: Standard input stream was empty"
     usage
     exit 11
+fi
+
+# Check for spec tag
+if $(echo $spec_tag | grep -vq version); then
+    error_message "Parse Error: XML Spec Tag not found"
+    usage
+    exit 19
 fi
 
 line_nb=0
