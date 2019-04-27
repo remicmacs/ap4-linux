@@ -163,30 +163,6 @@ function parse_plant_entry () {
     echo "${plant_array[COMMON]};${plant_array[BOTANICAL]};${plant_array[ZONE]};${plant_array[LIGHT]};${plant_array[PRICE]};${plant_array[AVAILABILITY]}"
 }
 
-# Extract information from a regular tag
-function process_tag () {
-    tagname=$1
-    tag_content=$2
-
-    if [[  "placeholder$tag_content" == "placeholder" ]]; then
-        parse_error "Malformed Plant XML Tag or empty value"
-    fi
-
-    # echo "Tagname is \"$tagname\""
-
-    # echo "Content is : \"$tag_content\""
-
-    case $tagname in
-        "COMMON");;
-        "BOTANICAL");;
-        "ZONE");;
-        "LIGHT");;
-        "PRICE");;
-        "AVAILABILITY");;
-        *) parse_error "Unknown tag \"$tagname\"";;
-    esac
-}
-
 # Check if any arguments are used
 if [ $# -ne 0 ]; then
     error_message "Error: Too many arguments"
@@ -195,7 +171,6 @@ if [ $# -ne 0 ]; then
 fi
 
 # Stripping XML spec tag
-# TODO: Do a while loop until spec is found
 empty_file=false
 read spec_tag || empty_file=true
 line_nb=$((line_nb + 1))
@@ -210,7 +185,7 @@ is_spec_tag "$spec_tag" && has_spec_tag=true
 
 until [[ "placeholder$has_spec_tag" = "placeholdertrue" ]]; do
     read spec_tag || parse_error "No XML Spec Tag found"
-    line_nb=$((line_nb + 1))
+    ((line_nb+=1))
     is_spec_tag "$spec_tag" && has_spec_tag=true
 done
 
