@@ -56,10 +56,9 @@ function is_empty_line () {
 }
 
 # Check whether line is a comment or not
-# TODO: implement
 # TODO: manage multiline comment
 function is_comment () {
-    ! true
+    [[ $1 =~ (.*<\!--.*) ]];
 }
 
 # Parse a plant entry
@@ -122,6 +121,9 @@ function parse_plant_entry () {
     declare -A plant_array
 
     while read line; do
+        if is_comment $line; then
+            continue
+        fi
         # Get tagname by capturing content of the first tag of the line
         tagname=$(echo $line | sed -rn 's/.*<\/?([^<>/]*)>.*/\1/p')
 
@@ -192,7 +194,7 @@ done
 line_nb=0
 plants_nb=0
 while read line; do
-    if is_empty_line $line ; then
+    if is_empty_line $line || is_comment $line; then
         continue
     fi
     parse_line $line
