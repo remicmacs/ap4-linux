@@ -6,6 +6,8 @@ declare -A testfiles
 testfiles["spec_tag_far_away.xml"]=0
 testfiles["one_plant.xml"]=0
 testfiles["plant_catalog.xml"]=0
+testfiles["one_commented_entry.xml"]=0
+testfiles["one_line_comment.xml"]=0
 
 # Parse error test files
 testfiles["duplicate_tag.xml"]=19
