@@ -21,11 +21,10 @@ EOF
 has_spec_tag=false
 catalog_is_open=false
 plant_is_open=false
-closing_tag=false
 
 # Display error message
 function error_message () {
-    (>&2 echo $1)
+    (>&2 echo "$1")
     echo
 }
 
@@ -68,7 +67,7 @@ function parse_line () {
     # echo $line;
 
     # Get tagname by capturing content of the first tag of the line
-    tagname=$(echo $line | sed -rn 's/.*<\/?([^<>/]*)>.*/\1/p')
+    tagname=$(echo "$line" | sed -rn 's/.*<\/?([^<>/]*)>.*/\1/p')
 
     if [[ "placeholder$tagname" == "placeholder" ]]; then
         parse_error "Empty Tagname"
@@ -78,7 +77,7 @@ function parse_line () {
 
     # Get tag content
     # If the line contains a malformed XML field, it will contain nothing
-    tag_content=$(echo $line | sed -rn "s/.*<$tagname>([^<]*)<\/$tagname>.*/\1/p")
+    tag_content=$(echo "$line" | sed -rn "s/.*<$tagname>([^<]*)<\/$tagname>.*/\1/p")
 
     # echo "Content is : \"$tag_content\""
 
@@ -120,27 +119,26 @@ function parse_plant_entry () {
 
     declare -A plant_array
 
-    while read line; do
-        if is_comment $line; then
+    while read -r line; do
+        if is_comment "$line"; then
             continue
         fi
         # Get tagname by capturing content of the first tag of the line
-        tagname=$(echo $line | sed -rn 's/.*<\/?([^<>/]*)>.*/\1/p')
+        tagname=$(echo "$line" | sed -rn 's/.*<\/?([^<>/]*)>.*/\1/p')
 
         if [[ "placeholder$tagname" == "placeholder" ]]; then
             parse_error "Empty Tagname"
         fi
 
-        if [[ $tagname = "PLANT" ]] && is_closing_tag $line; then
+        if [[ $tagname = "PLANT" ]] && is_closing_tag "$line"; then
             break
         fi
 
         # Get tag content
         # If the line contains a malformed XML field, it will contain nothing
-        tag_content=$(echo $line | sed -rn "s/.*<$tagname>([^<]*)<\/$tagname>.*/\1/p")
+        tag_content=$(echo "$line" | sed -rn "s/.*<$tagname>([^<]*)<\/$tagname>.*/\1/p")
 
         if [[ "placeholder$tag_content" == "placeholder" ]]; then
-            echo ${line}
             parse_error "Malformed XML Tag or Empty Tag"
         fi
 
@@ -174,7 +172,7 @@ fi
 
 # Stripping XML spec tag
 empty_file=false
-read spec_tag || empty_file=true
+read -r spec_tag || empty_file=true
 line_nb=$((line_nb + 1))
 # If there is no such tag, then the XML must be an empty file
 if $empty_file; then
@@ -186,18 +184,18 @@ fi
 is_spec_tag "$spec_tag" && has_spec_tag=true
 
 until [[ "placeholder$has_spec_tag" = "placeholdertrue" ]]; do
-    read spec_tag || parse_error "No XML Spec Tag found"
+    read -r spec_tag || parse_error "No XML Spec Tag found"
     ((line_nb+=1))
     is_spec_tag "$spec_tag" && has_spec_tag=true
 done
 
 line_nb=0
 plants_nb=0
-while read line; do
-    if is_empty_line $line || is_comment $line; then
+while read -r line; do
+    if is_empty_line "$line" || is_comment "$line"; then
         continue
     fi
-    parse_line $line
+    parse_line "$line"
     line_nb=$((line_nb + 1))
 done
 

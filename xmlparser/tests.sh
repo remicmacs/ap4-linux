@@ -37,7 +37,7 @@ function check_results () {
 }
 
 # Keys of associative arrays are accessed with exclamation point
-for filename in ${!testfiles[@]}; do
-    cat $filename | ./mhxmlp.sh &> /dev/null
+for filename in "${!testfiles[@]}"; do
+    ./mhxmlp.sh < $filename &> /dev/null
     check_results $filename $? ${testfiles[$filename]}
 done
