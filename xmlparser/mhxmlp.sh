@@ -55,19 +55,26 @@ function is_empty_line () {
 }
 
 # Check whether line is a comment or not
-# TODO: manage multiline comment
 function is_comment () {
     [[ $1 =~ (.*<\!--.*) ]];
 }
 
-# Parse a plant entry
+function find_closing_comment () {
+    line=$1
+
+    until [[ "$line" =~ (.*-->$) ]]; do
+        read -r line
+    done
+}
 
 # Parse a read line to extract tagname and tag content
 function parse_line () {
-    # echo $line;
+    # echo "line: $line";
 
     # Get tagname by capturing content of the first tag of the line
     tagname=$(echo "$line" | sed -rn 's/.*<\/?([^<>/]*)>.*/\1/p')
+
+    # echo "Tagname: $tagname"
 
     if [[ "placeholder$tagname" == "placeholder" ]]; then
         parse_error "Empty Tagname"
@@ -115,14 +122,19 @@ function parse_line () {
 
 }
 
+# Parse a plant entry
 function parse_plant_entry () {
 
     declare -A plant_array
 
     while read -r line; do
         if is_comment "$line"; then
+            find_closing_comment "$line"
+            continue
+        elif is_empty_line "$line"; then
             continue
         fi
+
         # Get tagname by capturing content of the first tag of the line
         tagname=$(echo "$line" | sed -rn 's/.*<\/?([^<>/]*)>.*/\1/p')
 
@@ -192,7 +204,10 @@ done
 line_nb=0
 plants_nb=0
 while read -r line; do
-    if is_empty_line "$line" || is_comment "$line"; then
+    if is_empty_line "$line"; then
+        continue
+    elif is_comment "$line"; then
+        find_closing_comment "$line"
         continue
     fi
     parse_line "$line"
