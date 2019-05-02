@@ -17,11 +17,6 @@ Please do not report bugs, they are features.
 EOF
 }
 
-# Global boolean flags
-has_spec_tag=false
-catalog_is_open=false
-plant_is_open=false
-
 # Parse error function : displays the error message and exits 19
 function parse_error () {
     (>&2 echo "Parse Error: $1")
@@ -40,12 +35,12 @@ function is_closing_tag () {
 
 # Check whether a tag is left open or not
 function is_open () {
-   [[ "placeholder$1" == "placeholdertrue" ]];
+   [[ "$1" == "true" ]];
 }
 
 # Check whether the line is empty or not
 function is_empty_line () {
-    [ "placeholder$1" = "placeholder" ];
+    [[ "$1" = "" ]];
 }
 
 # Check whether line is a comment or not
@@ -70,7 +65,7 @@ function parse_line () {
 
     # echo "Tagname: $tagname"
 
-    if [[ "placeholder$tagname" == "placeholder" ]]; then
+    if [[ "$tagname" == "" ]]; then
         parse_error "Empty Tagname"
     fi
 
@@ -86,7 +81,7 @@ function parse_line () {
 
         "CATALOG")
             # echo "Checking opening/closing tag";
-            if is_closing_tag "$line" && [[ "placeholder$catalog_is_open" == "placeholderfalse" ]]; then
+            if is_closing_tag "$line" && [[ "$catalog_is_open" == "false" ]]; then
                 parse_error "Closing a closed catalog"
             fi
 
@@ -102,7 +97,7 @@ function parse_line () {
             fi
         ;;
         "PLANT")
-            if is_closing_tag "$line" && [[ "placeholder$plant_is_open" == "placeholderfalse" ]]; then
+            if is_closing_tag "$line" && [[ "$plant_is_open" == "false" ]]; then
                 parse_error "Closing a closed plant entry"
             fi
 
@@ -132,7 +127,7 @@ function parse_plant_entry () {
         # Get tagname by capturing content of the first tag of the line
         tagname=$(echo "$line" | sed -rn 's/.*<\/?([^<>/]*)>.*/\1/p')
 
-        if [[ "placeholder$tagname" == "placeholder" ]]; then
+        if [[ "$tagname" == "" ]]; then
             parse_error "Empty Tagname"
         fi
 
@@ -144,7 +139,7 @@ function parse_plant_entry () {
         # If the line contains a malformed XML field, it will contain nothing
         tag_content=$(echo "$line" | sed -rn "s/.*<$tagname>([^<]*)<\/$tagname>.*/\1/p")
 
-        if [[ "placeholder$tag_content" == "placeholder" ]]; then
+        if [[ "$tag_content" == "" ]]; then
             parse_error "Malformed XML Tag or Empty Tag"
         fi
 
@@ -161,13 +156,19 @@ function parse_plant_entry () {
 
     plant_is_open=false
 
-    if [[ "placeholder${plant_array[COMMON]}" == "placeholder" ]]; then
+    if [[ "${plant_array[COMMON]}" == "" ]]; then
         parse_error "Empty COMMON tag in PLANT entry"
     fi
 
     ((plants_nb+=1))
     echo "${plant_array[COMMON]};${plant_array[BOTANICAL]};${plant_array[ZONE]};${plant_array[LIGHT]};${plant_array[PRICE]};${plant_array[AVAILABILITY]}"
 }
+
+
+# Global boolean flags
+has_spec_tag=false
+catalog_is_open=false
+plant_is_open=false
 
 # Check if any arguments are used
 if [ $# -ne 0 ]; then
@@ -189,7 +190,7 @@ fi
 
 is_spec_tag "$spec_tag" && has_spec_tag=true
 
-until [[ "placeholder$has_spec_tag" = "placeholdertrue" ]]; do
+until [[ "$has_spec_tag" = "true" ]]; do
     read -r spec_tag || parse_error "No XML Spec Tag found"
     ((line_nb+=1))
     is_spec_tag "$spec_tag" && has_spec_tag=true
