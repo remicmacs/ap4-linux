@@ -173,3 +173,99 @@ Partir d'une install minimale
 ##### Ne pas se logguer en root
 
 Créer des comptes nominatifs.
+
+---
+
+Séance du 2019-05-02
+
+##### Utilisation de PAM
+
+Utiliser PAM avec des protocoles sécurisés (Kerberos). LDAP ou MySQL : pas sécurisé par défaut, il faut explicitement configurer les services pour que les connexions soient chiffrées.
+
+On peut aussi configurer PAM pour éviter certains comportements qui affaiblissent la sécurité (plages horaires d'accès, force du mdp pam_cracklib, passcdqc : password policy)
+
+##### Sticky bit
+
+Dossiers ouverts à tous en écriture : sticky bit pour éviter que les autres suppriment les fichiers des autres.
+
+##### Sockets et pipes nommés
+
+Ne pas créer de sockets locales dans des dossiers accessibles par tout le monde
+
+##### Utiliser l'API syslog
+
+Les services ont un log dédié. Le process n'a pas les droits dans les fichiers.
+
+Utiliser a minima l'utilitaire `logger` en CLI
+
+##### MTA Mail Transport Agent
+
+Rejeter les mails qui ne sont pas à destination d'un user local du serveur.
+
+##### Alias mail
+
+Créer un alias mail pour chaque service pour que les alertes soient reçus par les bonnes personnes.
+
+##### sudo
+
+Avoir un groupe dédié.
+
+Mais aussi des options de config précises pour éviter les attaques d'élévations de privilèges.
+
+Éviter d'utiliser root comme utilisateur cible de sudo quand c'est possible
+
+Syntaxe négative de sudo : ne marche pas, ça se contourne facilement.
+
+On peut donner des droits sur des commandes avec des arguments précis
+
+#### Renforcé
+
+##### Cloisennement des services réseau
+
+1 service par host
+firewall entre db et service web
+
+##### Journalisation
+
+Si on peut activer les logs partout et les exporter, il faut le faire.
+
+##### Bootloader + password
+
+Demander pw quand on modifie les options de boot
+
+Restreindre l'accès physique aux serveurs
+
+##### Gesion des secrets et certificats
+
+Installation des CA et génération en local des clés privées immédiatement après installation.
+
+CA : mieux vaut l'installer dès qu'on peut
+
+##### Utilisation des services
+
+Compte de service unique par service
+
+Supprimer les comptes inutiles. Comptes qui n'ont pas de mdp dans et de shell
+
+##### umask
+
+Un système, un user
+
+##### Monitorer les fichiers
+
+Si on trouve un fichier sans owner / sans groupe
+
+Mais aussi ce qu'on a vu plus haut : les dossiers où tout le monde peut écrire.
+
+##### Accounting / Audit
+
+`auditd`
+
+##### Restriction de l'environnement des process
+
+Utiliser chroot
+
+## Filesystems
+
+Monitorer avec FIM File Integrity Monitoring
+Calcul de Hash des fichiers sensibles sur un système
