@@ -20,10 +20,10 @@ testfiles["no_spec_tag.xml"]=19
 testfiles["other_empty_tagname.xml"]=19
 testfiles["really_no_spec_tag.xml"]=19
 testfiles["unknown_tag.xml"]=19
+testfiles["only_spectag.xml"]=19
 
 # Empty file
 testfiles["reallyempty.xml"]=11
-
 
 function check_results () {
     filename=$1
