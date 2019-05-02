@@ -22,12 +22,6 @@ has_spec_tag=false
 catalog_is_open=false
 plant_is_open=false
 
-# Display error message
-function error_message () {
-    (>&2 echo "$1")
-    echo
-}
-
 # Parse error function : displays the error message and exits 19
 function parse_error () {
     (>&2 echo "Parse Error: $1")
@@ -177,7 +171,7 @@ function parse_plant_entry () {
 
 # Check if any arguments are used
 if [ $# -ne 0 ]; then
-    error_message "Error: Too many arguments"
+    (>&2 echo "Error: Too many arguments")
     usage
     exit 5
 fi
@@ -188,7 +182,7 @@ read -r spec_tag || empty_file=true
 line_nb=$((line_nb + 1))
 # If there is no such tag, then the XML must be an empty file
 if $empty_file; then
-    error_message "Error: Standard input stream was empty"
+    (>&2 echo "Error: Standard input stream was empty")
     usage
     exit 11
 fi
